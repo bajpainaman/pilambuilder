@@ -1,0 +1,92 @@
+{
+    "users": {
+      "user_001": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com",
+        "role": "Brother",
+        "firstLogin": null,
+        "lastLogin": null,
+        "isActive": true,
+        "activities": {
+          "activity_001": {
+            "action": "Added PNM",
+            "targetPNMId": "pnm_001",
+            "details": {
+              "note": "Referred by Alex"
+            },
+            "timestamp": "2025-02-17T12:00:00Z"
+          },
+          "activity_002": {
+            "action": "Commented",
+            "targetPNMId": "pnm_002",
+            "details": {
+              "commentText": "Great potential!"
+            },
+            "timestamp": "2025-02-17T13:00:00Z"
+          }
+        }
+      }
+    },
+    "pnms": {
+      "pnm_001": {
+        "fullName": "Alex Johnson",
+        "contactInfo": {
+          "phone": "+1234567890",
+          "email": "alex.johnson@example.com",
+          "socialMediaLinks": {
+            "instagram": "alexj_ig",
+            "facebook": "alexjohnson",
+            "linkedin": "alex-johnson"
+          }
+        },
+        "grade": "A",
+        "addedBy": "user_001",
+        "createdAt": "2025-02-17T10:30:00Z",
+        "updatedAt": "2025-02-17T11:00:00Z",
+        "status": "Active",
+        "comments": {
+          "comment_001": {
+            "commentText": "Seems like a great fit!",
+            "commenterId": "user_001",
+            "timestamp": "2025-02-17T11:15:00Z"
+          }
+        }
+      }
+    },
+    "outreach": {
+      "outreach_001": {
+        "type": "Email",
+        "targetPNMs": ["pnm_001"],
+        "content": "Welcome to our fraternity!",
+        "createdBy": "user_001",
+        "scheduledAt": "2025-02-18T08:00:00Z",
+        "sentAt": "2025-02-18T08:10:00Z",
+        "deliveryStats": {
+          "pnm_001": {
+            "status": "Sent",
+            "error": null
+          }
+        },
+        "status": "Sent"
+      }
+    },
+    "forms": {
+      "form_001": {
+        "submittedBy": "pnm_001",
+        "formType": "Interest Form",
+        "responses": {
+          "question_1": "I want to join because...",
+          "question_2": "My hobbies include..."
+        },
+        "attachments": [
+          "https://example.com/form_attachment.pdf"
+        ],
+        "status": "Reviewed",
+        "reviewedBy": "user_001",
+        "createdAt": "2025-02-17T09:00:00Z",
+        "updatedAt": "2025-02-17T09:30:00Z"
+      }
+    }
+  }
+  
