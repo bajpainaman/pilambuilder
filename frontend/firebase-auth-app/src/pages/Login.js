@@ -1,144 +1,305 @@
-import React, { useState } from "react";
-import { auth, signInWithGoogle, signInWithPhone } from "../firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import Card from "../components/UI/Card";
+import Input from "../components/UI/Input";
+import Button from "../components/UI/Button";
 
 const Login = () => {
+  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  
+  // UI states
   const [confirmationResult, setConfirmationResult] = useState(null);
-  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("email");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
+  // Auth context and navigation
+  const { 
+    currentUser, 
+    signInWithGoogle, 
+    signInWithEmail, 
+    signUpWithEmail, 
+    signInWithPhone, 
+    error: authError 
+  } = useAuth();
   const navigate = useNavigate();
 
-  // Handle Google Sign-In and redirect to Dashboard
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/dashboard");
+    }
+  }, [currentUser, navigate]);
+
+  // Handle form validation
+  const validateForm = () => {
+    const errors = {};
+    
+    if (activeTab === "email") {
+      if (!email.trim()) errors.email = "Email is required";
+      else if (!/\S+@\S+\.\S+/.test(email)) errors.email = "Email is invalid";
+      
+      if (!password) errors.password = "Password is required";
+      else if (password.length < 6) errors.password = "Password must be at least 6 characters";
+    } else if (activeTab === "phone") {
+      if (!phone.trim()) errors.phone = "Phone number is required";
+      else if (!/^\+\d{10,15}$/.test(phone)) {
+        errors.phone = "Phone number must be in E.164 format (e.g., +11234567890)";
+      }
+      
+      if (confirmationResult && !otp.trim()) {
+        errors.otp = "OTP is required";
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle Google Sign-In
   const handleGoogleSignIn = async () => {
+    setLoading(true);
     try {
       await signInWithGoogle();
       navigate("/dashboard");
     } catch (error) {
       console.error("Google Sign-In Error:", error);
-      setError("Google sign-in failed. Try again.");
+      setFormErrors({ general: "Google sign-in failed. Please try again." });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle Email Login
-  const handleEmailLogin = async (e) => {
+  // Handle Email Login/Signup
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    
+    if (!validateForm()) return;
+    
+    setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
       navigate("/dashboard");
     } catch (error) {
-      console.error("Email Login Error:", error);
-      setError("Invalid email or password.");
+      console.error("Email Auth Error:", error);
+      setFormErrors({ 
+        general: isSignUp 
+          ? "Signup failed. Email may already be in use." 
+          : "Login failed. Invalid email or password." 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle Email Signup
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Signup Error:", error);
-      setError("Signup failed. Try a different email.");
-    }
-  };
-
+  // Handle Phone Login - Send OTP
   const handlePhoneLogin = async () => {
-    if (!phone.startsWith("+")) {
-      alert("Phone number must start with '+' followed by the country code. Example: +11234567890");
-      return;
-    }
-    setError("");
+    if (!validateForm()) return;
+    
+    setLoading(true);
     try {
       const result = await signInWithPhone(phone);
       setConfirmationResult(result);
     } catch (error) {
-      setError("Failed to send OTP. Ensure the phone number is correct.");
+      console.error("Phone Login Error:", error);
+      setFormErrors({ general: "Failed to send OTP. Please check the phone number." });
+    } finally {
+      setLoading(false);
     }
   };
-  
 
   // Handle OTP Verification
   const handleOtpVerification = async () => {
-    setError("");
+    if (!otp.trim()) {
+      setFormErrors({ otp: "OTP is required" });
+      return;
+    }
+    
+    setLoading(true);
     try {
       await confirmationResult.confirm(otp);
       navigate("/dashboard");
     } catch (error) {
       console.error("OTP Verification Error:", error);
-      setError("Invalid OTP. Please try again.");
+      setFormErrors({ otp: "Invalid OTP. Please try again." });
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Container styles
+  const containerStyles = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100vh',
+    padding: '20px',
+    backgroundColor: '#f5f5f5',
+  };
+
+  // Tab styles
+  const tabContainerStyles = {
+    display: 'flex',
+    width: '100%',
+    marginBottom: '20px',
+    borderBottom: '1px solid #e0e0e0',
+  };
+  
+  const tabStyles = (isActive) => ({
+    padding: '10px 20px',
+    cursor: 'pointer',
+    fontWeight: isActive ? 'bold' : 'normal',
+    borderBottom: isActive ? '2px solid #2196F3' : 'none',
+    color: isActive ? '#2196F3' : '#757575',
+  });
+
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h2>Login / Sign Up</h2>
+    <div style={containerStyles}>
+      <Card title="Pi Lambda Phi" elevation={3} padding="30px" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 style={{ textAlign: 'center', margin: '0 0 20px' }}>
+          {isSignUp ? 'Create an Account' : 'Welcome Back'}
+        </h2>
+        
+        {formErrors.general && (
+          <div style={{ color: '#F44336', textAlign: 'center', marginBottom: '15px' }}>
+            {formErrors.general}
+          </div>
+        )}
+        
+        {authError && (
+          <div style={{ color: '#F44336', textAlign: 'center', marginBottom: '15px' }}>
+            {authError}
+          </div>
+        )}
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        <Button 
+          onClick={handleGoogleSignIn} 
+          fullWidth 
+          disabled={loading}
+          variant="primary"
+          style={{ marginBottom: '20px' }}
+        >
+          {loading ? 'Signing in...' : 'Sign in with Google'}
+        </Button>
 
-      <button onClick={handleGoogleSignIn} style={styles.button}>
-        Sign in with Google
-      </button>
-
-      <h3>Or use Email</h3>
-      <form onSubmit={handleEmailLogin} style={styles.form}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} style={styles.input} />
-        <button type="submit" style={styles.button}>Login</button>
-        <button onClick={handleSignup} style={{ ...styles.button, backgroundColor: "#34a853" }}>Sign Up</button>
-      </form>
-
-      <h3>Or use Phone</h3>
-      <div>
-        <input type="text" placeholder="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.input} />
-        <button onClick={handlePhoneLogin} style={styles.button}>Send OTP</button>
-      </div>
-
-      {confirmationResult && (
-        <div>
-          <input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)} style={styles.input} />
-          <button onClick={handleOtpVerification} style={styles.button}>Verify OTP</button>
+        <div style={{ textAlign: 'center', margin: '20px 0' }}>
+          <span style={{ color: '#757575' }}>Or continue with</span>
         </div>
-      )}
 
-      <div id="recaptcha-container"></div>
+        <div style={tabContainerStyles}>
+          <div 
+            style={tabStyles(activeTab === 'email')}
+            onClick={() => setActiveTab('email')}
+          >
+            Email
+          </div>
+          <div 
+            style={tabStyles(activeTab === 'phone')}
+            onClick={() => setActiveTab('phone')}
+          >
+            Phone
+          </div>
+        </div>
+
+        {activeTab === 'email' ? (
+          <form onSubmit={handleEmailSubmit}>
+            <Input 
+              type="email"
+              label="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={formErrors.email}
+              placeholder="Enter your email"
+              required
+            />
+            <Input 
+              type="password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={formErrors.password}
+              placeholder="Enter your password"
+              required
+            />
+            <Button 
+              type="submit" 
+              fullWidth 
+              disabled={loading}
+              variant={isSignUp ? 'success' : 'primary'}
+            >
+              {loading ? 'Processing...' : isSignUp ? 'Sign Up' : 'Login'}
+            </Button>
+            
+            <div style={{ textAlign: 'center', marginTop: '15px' }}>
+              <button 
+                type="button" 
+                onClick={() => setIsSignUp(!isSignUp)} 
+                style={{ background: 'none', border: 'none', color: '#2196F3', cursor: 'pointer' }}
+              >
+                {isSignUp ? 'Already have an account? Login' : 'Need an account? Sign Up'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div>
+            <Input 
+              type="tel"
+              label="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              error={formErrors.phone}
+              placeholder="e.g., +11234567890"
+              required
+            />
+            
+            {!confirmationResult ? (
+              <Button 
+                onClick={handlePhoneLogin} 
+                fullWidth 
+                disabled={loading}
+                variant="primary"
+              >
+                {loading ? 'Sending...' : 'Send OTP'}
+              </Button>
+            ) : (
+              <>
+                <Input 
+                  type="text"
+                  label="One-Time Password"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  error={formErrors.otp}
+                  placeholder="Enter the OTP sent to your phone"
+                  required
+                />
+                <Button 
+                  onClick={handleOtpVerification} 
+                  fullWidth 
+                  disabled={loading}
+                  variant="success"
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+      </Card>
+      
+      <div id="recaptcha-container" style={{ marginTop: '20px' }}></div>
     </div>
   );
-};
-
-// Simple inline styles for better UI
-const styles = {
-  button: {
-    display: "block",
-    width: "200px",
-    margin: "10px auto",
-    padding: "10px",
-    fontSize: "16px",
-    backgroundColor: "#4285F4",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer"
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "10px"
-  },
-  input: {
-    width: "250px",
-    padding: "8px",
-    fontSize: "14px",
-    borderRadius: "5px",
-    border: "1px solid #ccc"
-  }
 };
 
 export default Login;

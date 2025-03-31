@@ -1,39 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getDatabase, ref, onValue, update } from "firebase/database";
+import { useAuth } from "../contexts/AuthContext";
+import { useDatabase } from "../contexts/DatabaseContext";
+import Layout from "../components/UI/Layout";
+import Card from "../components/UI/Card";
+import Input from "../components/UI/Input";
+import Button from "../components/UI/Button";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  // States for PNM data and UI
   const [pnms, setPnms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPnmId, setSelectedPnmId] = useState("");
   const [editPnm, setEditPnm] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Get auth and database contexts
+  const { currentUser } = useAuth();
+  const { subscribeToCollection, updateRecord, error: dbError } = useDatabase();
+  const navigate = useNavigate();
 
-  const db = getDatabase();
-
+  // Fetch PNMs on component mount
   useEffect(() => {
-    const pnmsRef = ref(db, "pnms");
-    const unsubscribe = onValue(pnmsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const pnmList = Object.keys(data).map((key) => ({
-          id: key,
-          ...data[key],
-        }));
-        setPnms(pnmList);
-      } else {
-        setPnms([]);
-      }
+    const unsubscribe = subscribeToCollection("pnms", (data) => {
+      setPnms(data);
       setLoading(false);
     });
 
+    // Clean up subscription on unmount
     return () => unsubscribe();
-  }, [db]);
+  }, [subscribeToCollection]);
 
-  // ✅ Handle selecting a PNM to edit
+  // Handle selecting a PNM to edit
   const handleSelectPNM = (e) => {
     const selectedId = e.target.value;
     setSelectedPnmId(selectedId);
+    
     if (selectedId) {
       const selectedPnm = pnms.find((pnm) => pnm.id === selectedId);
       setEditPnm({ ...selectedPnm });
@@ -42,126 +45,266 @@ const Dashboard = () => {
     }
   };
 
-  // ✅ Handle updating a PNM
+  // Handle updating a PNM
   const handleUpdatePNM = async () => {
     if (!selectedPnmId || !editPnm) return;
 
     try {
-      const pnmRef = ref(db, `pnms/${selectedPnmId}`);
-      await update(pnmRef, {
+      await updateRecord(`pnms/${selectedPnmId}`, {
         ...editPnm,
         updatedAt: new Date().toISOString(),
       });
 
-      alert(`PNM ${editPnm.fullName} updated successfully!`);
+      alert(`${editPnm.fullName} updated successfully!`);
     } catch (error) {
       console.error("Error updating PNM:", error);
     }
   };
 
+  // Filter PNMs based on status and search term
+  const filteredPnms = pnms.filter((pnm) => {
+    const matchesStatus = filterStatus === "all" || pnm.status === filterStatus;
+    const matchesSearch = !searchTerm || 
+      pnm.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (pnm.contactInfo?.email && pnm.contactInfo.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (pnm.contactInfo?.phone && pnm.contactInfo.phone.includes(searchTerm));
+    
+    return matchesStatus && matchesSearch;
+  });
+
+  // Helper function to get status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Accepted":
+        return "#4CAF50"; // Green
+      case "Rejected":
+        return "#F44336"; // Red
+      case "In Progress":
+        return "#2196F3"; // Blue
+      case "Pending":
+      default:
+        return "#FFC107"; // Amber
+    }
+  };
+
+  // Get status badge style
+  const getStatusBadgeStyle = (status) => ({
+    display: "inline-block",
+    padding: "4px 8px",
+    borderRadius: "12px",
+    backgroundColor: getStatusColor(status),
+    color: "white",
+    fontSize: "12px",
+    fontWeight: "bold",
+  });
+
+  // Button to add new PNM
+  const AddPnmButton = () => (
+    <Button 
+      onClick={() => navigate("/referral")} 
+      variant="success"
+      style={{ marginBottom: "20px" }}
+    >
+      Add New PNM
+    </Button>
+  );
+
   return (
-    <div style={styles.container}>
-      <h2>PNM Dashboard</h2>
-      <button onClick={() => navigate("/referral")} style={styles.referralButton}>
-        Add New PNM via Referral
-      </button>
+    <Layout title="PNM Dashboard">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h3 style={{ margin: 0 }}>
+          Welcome, {currentUser?.displayName || currentUser?.email || "Brother"}
+        </h3>
+        <AddPnmButton />
+      </div>
 
-      <h3>Edit a PNM Record</h3>
-      <select onChange={handleSelectPNM} style={styles.input}>
-        <option value="">Select a PNM to Edit</option>
-        {pnms.map((pnm) => (
-          <option key={pnm.id} value={pnm.id}>{pnm.fullName}</option>
-        ))}
-      </select>
-
-      {editPnm && (
-        <div>
-          <input type="text" placeholder="Full Name" value={editPnm.fullName}
-            onChange={(e) => setEditPnm({ ...editPnm, fullName: e.target.value })} style={styles.input} />
-          <input type="text" placeholder="Phone" value={editPnm.contactInfo?.phone || ""}
-            onChange={(e) => setEditPnm({ ...editPnm, contactInfo: { ...editPnm.contactInfo, phone: e.target.value } })} style={styles.input} />
-          <input type="text" placeholder="Email" value={editPnm.contactInfo?.email || ""}
-            onChange={(e) => setEditPnm({ ...editPnm, contactInfo: { ...editPnm.contactInfo, email: e.target.value } })} style={styles.input} />
-          <input type="text" placeholder="Status" value={editPnm.status || ""}
-            onChange={(e) => setEditPnm({ ...editPnm, status: e.target.value })} style={styles.input} />
-          <button onClick={handleUpdatePNM} style={styles.updateButton}>Update PNM</button>
-        </div>
+      {dbError && (
+        <Card title="Error" elevation={2} style={{ marginBottom: "20px", backgroundColor: "#FFEBEE" }}>
+          <p>{dbError}</p>
+        </Card>
       )}
 
-      <h3>All PNMs</h3>
-      {loading ? <p>Loading PNMs...</p> : (
-        <div>
-          {pnms.length === 0 ? (
-            <p>No PNMs found.</p>
-          ) : (
-            pnms.map((pnm) => (
-              <div key={pnm.id} style={styles.pnmCard}>
-                <h4>{pnm.fullName}</h4>
-                <p><strong>Phone:</strong> {pnm.contactInfo?.phone}</p>
-                <p><strong>Email:</strong> {pnm.contactInfo?.email}</p>
-                <p><strong>Status:</strong> {pnm.status}</p>
+      <Card title="Filter PNMs" elevation={1}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "15px" }}>
+          <Input 
+            label="Search PNMs"
+            placeholder="Name, Email, or Phone"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            fullWidth={false}
+            style={{ flex: 2, minWidth: "200px" }}
+          />
+          
+          <div style={{ flex: 1, minWidth: "150px" }}>
+            <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", fontWeight: "bold" }}>
+              Filter by Status
+            </label>
+            <select 
+              value={filterStatus} 
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: "4px",
+                border: "1px solid #ddd",
+                fontSize: "14px",
+                width: "100%",
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Edit PNM" elevation={1}>
+        <select 
+          onChange={handleSelectPNM} 
+          value={selectedPnmId}
+          style={{
+            padding: "10px 12px",
+            borderRadius: "4px",
+            border: "1px solid #ddd",
+            fontSize: "14px",
+            width: "100%",
+            marginBottom: "15px",
+          }}
+        >
+          <option value="">Select a PNM to Edit</option>
+          {pnms.map((pnm) => (
+            <option key={pnm.id} value={pnm.id}>{pnm.fullName}</option>
+          ))}
+        </select>
+
+        {editPnm && (
+          <div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+              <Input 
+                label="Full Name"
+                value={editPnm.fullName}
+                onChange={(e) => setEditPnm({ ...editPnm, fullName: e.target.value })}
+                style={{ flex: 1, minWidth: "200px" }}
+              />
+              
+              <Input 
+                label="Phone"
+                value={editPnm.contactInfo?.phone || ""}
+                onChange={(e) => setEditPnm({ 
+                  ...editPnm, 
+                  contactInfo: { ...editPnm.contactInfo, phone: e.target.value } 
+                })}
+                style={{ flex: 1, minWidth: "200px" }}
+              />
+              
+              <Input 
+                label="Email"
+                type="email"
+                value={editPnm.contactInfo?.email || ""}
+                onChange={(e) => setEditPnm({ 
+                  ...editPnm, 
+                  contactInfo: { ...editPnm.contactInfo, email: e.target.value } 
+                })}
+                style={{ flex: 1, minWidth: "200px" }}
+              />
+            </div>
+            
+            <div style={{ marginTop: "15px" }}>
+              <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", fontWeight: "bold" }}>
+                Status
+              </label>
+              <select 
+                value={editPnm.status || "Pending"}
+                onChange={(e) => setEditPnm({ ...editPnm, status: e.target.value })}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  width: "100%",
+                  marginBottom: "15px",
+                }}
+              >
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            
+            <Button onClick={handleUpdatePNM} variant="success">
+              Update PNM
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      <Card title={`PNM List (${filteredPnms.length})`} elevation={1}>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            <p>Loading PNMs...</p>
+          </div>
+        ) : (
+          <div>
+            {filteredPnms.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                <p>No PNMs found matching your criteria.</p>
+                <AddPnmButton />
               </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "15px" }}>
+                {filteredPnms.map((pnm) => (
+                  <Card 
+                    key={pnm.id} 
+                    elevation={1} 
+                    padding="15px"
+                    onClick={() => {
+                      setSelectedPnmId(pnm.id);
+                      setEditPnm({ ...pnm });
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <h3 style={{ margin: "0 0 10px 0" }}>{pnm.fullName}</h3>
+                      <span style={getStatusBadgeStyle(pnm.status || "Pending")}>
+                        {pnm.status || "Pending"}
+                      </span>
+                    </div>
+                    
+                    <div style={{ fontSize: "14px", color: "#555" }}>
+                      {pnm.contactInfo?.phone && (
+                        <p style={{ margin: "5px 0" }}>
+                          <strong>Phone:</strong> {pnm.contactInfo.phone}
+                        </p>
+                      )}
+                      
+                      {pnm.contactInfo?.email && (
+                        <p style={{ margin: "5px 0" }}>
+                          <strong>Email:</strong> {pnm.contactInfo.email}
+                        </p>
+                      )}
+                      
+                      {pnm.referredBy && (
+                        <p style={{ margin: "5px 0" }}>
+                          <strong>Referred by:</strong> {pnm.referredBy}
+                        </p>
+                      )}
+                      
+                      <p style={{ margin: "5px 0", fontSize: "12px", color: "#757575" }}>
+                        Added: {new Date(pnm.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+    </Layout>
   );
 };
 
-// ✅ Styles
-
-
-
-
-// ✅ Define styles object
-    const styles = {
-    container: {
-      textAlign: "center",
-      padding: "20px"
-    },
-    logoutButton: {
-      backgroundColor: "#d9534f",
-      color: "white",
-      border: "none",
-      padding: "10px",
-      borderRadius: "5px",
-      cursor: "pointer"
-    },
-    input: {
-      width: "80%",
-      padding: "8px",
-      margin: "10px 0",
-      borderRadius: "5px",
-      border: "1px solid #ccc"
-    },
-    addButton: {
-      backgroundColor: "#4CAF50",
-      color: "white",
-      border: "none",
-      padding: "10px",
-      borderRadius: "5px",
-      cursor: "pointer",
-      marginBottom: "20px"
-    },
-    pnmCard: {
-      border: "1px solid #ddd",
-      padding: "15px",
-      margin: "10px auto",
-      width: "60%",
-      borderRadius: "8px",
-      boxShadow: "2px 2px 10px rgba(0,0,0,0.1)"
-    },
-    updateButton: {
-      backgroundColor: "#34a853",
-      color: "white",
-      border: "none",
-      padding: "8px",
-      borderRadius: "5px",
-      cursor: "pointer"
-    }
-  };
-  
-
-  
 export default Dashboard;
