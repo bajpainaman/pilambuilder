@@ -8,7 +8,8 @@ const Card = ({
   padding = '16px',
   margin = '0 0 16px 0',
   className = '',
-  onClick
+  onClick,
+  style = {}
 }) => {
   const shadows = {
     0: 'none',
@@ -19,31 +20,48 @@ const Card = ({
     5: '0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22)'
   };
 
+  // Adjust padding for mobile
+  const responsivePadding = typeof window !== 'undefined' && window.innerWidth <= 480 ? 
+    '12px' : padding;
+
   const cardStyles = {
     backgroundColor: 'white',
     borderRadius: '8px',
-    padding: padding,
+    padding: responsivePadding,
     margin: margin,
     boxShadow: shadows[elevation] || shadows[1],
     transition: 'box-shadow 0.3s ease',
     cursor: onClick ? 'pointer' : 'default',
+    width: '100%',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    WebkitTapHighlightColor: onClick ? 'rgba(0,0,0,0.1)' : 'transparent', // Feedback for tappable elements
+    ...style
   };
 
   const titleStyles = {
     margin: '0 0 8px 0',
-    fontSize: '18px',
+    fontSize: 'clamp(16px, 4vw, 18px)',
     fontWeight: 'bold',
     color: '#333',
+    wordBreak: 'break-word',
   };
 
   const subtitleStyles = {
     margin: '0 0 16px 0',
-    fontSize: '14px',
+    fontSize: 'clamp(12px, 3vw, 14px)',
     color: '#757575',
+    wordBreak: 'break-word',
   };
 
   return (
-    <div style={cardStyles} className={className} onClick={onClick}>
+    <div 
+      style={cardStyles} 
+      className={className} 
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       {title && <h3 style={titleStyles}>{title}</h3>}
       {subtitle && <p style={subtitleStyles}>{subtitle}</p>}
       {children}

@@ -144,8 +144,10 @@ const Login = () => {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    padding: '20px',
+    padding: '16px',
     backgroundColor: '#f5f5f5',
+    boxSizing: 'border-box',
+    width: '100%',
   };
 
   // Tab styles
@@ -154,31 +156,38 @@ const Login = () => {
     width: '100%',
     marginBottom: '20px',
     borderBottom: '1px solid #e0e0e0',
+    flexWrap: 'wrap',
   };
   
   const tabStyles = (isActive) => ({
-    padding: '10px 20px',
+    padding: '12px 20px',
     cursor: 'pointer',
     fontWeight: isActive ? 'bold' : 'normal',
     borderBottom: isActive ? '2px solid #2196F3' : 'none',
     color: isActive ? '#2196F3' : '#757575',
+    flex: '1',
+    textAlign: 'center',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   });
 
   return (
     <div style={containerStyles}>
-      <Card title="Pi Lambda Phi" elevation={3} padding="30px" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ textAlign: 'center', margin: '0 0 20px' }}>
+      <Card title="Pi Lambda Phi" elevation={3} padding="20px" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 style={{ textAlign: 'center', margin: '0 0 20px', fontSize: 'clamp(18px, 5vw, 24px)' }}>
           {isSignUp ? 'Create an Account' : 'Welcome Back'}
         </h2>
         
         {formErrors.general && (
-          <div style={{ color: '#F44336', textAlign: 'center', marginBottom: '15px' }}>
+          <div style={{ color: '#F44336', textAlign: 'center', marginBottom: '15px', wordBreak: 'break-word' }}>
             {formErrors.general}
           </div>
         )}
         
         {authError && (
-          <div style={{ color: '#F44336', textAlign: 'center', marginBottom: '15px' }}>
+          <div style={{ color: '#F44336', textAlign: 'center', marginBottom: '15px', wordBreak: 'break-word' }}>
             {authError}
           </div>
         )}

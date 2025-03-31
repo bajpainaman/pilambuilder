@@ -111,8 +111,8 @@ const Dashboard = () => {
 
   return (
     <Layout title="PNM Dashboard">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h3 style={{ margin: 0 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", gap: "10px" }}>
+        <h3 style={{ margin: 0, fontSize: 'clamp(16px, 4vw, 18px)', wordBreak: 'break-word' }}>
           Welcome, {currentUser?.displayName || currentUser?.email || "Brother"}
         </h3>
         <AddPnmButton />
@@ -125,14 +125,14 @@ const Dashboard = () => {
       )}
 
       <Card title="Filter PNMs" elevation={1}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "15px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", marginBottom: "15px" }}>
           <Input 
             label="Search PNMs"
             placeholder="Name, Email, or Phone"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             fullWidth={false}
-            style={{ flex: 2, minWidth: "200px" }}
+            style={{ flex: 2, minWidth: "250px", width: "100%" }}
           />
           
           <div style={{ flex: 1, minWidth: "150px" }}>
@@ -143,11 +143,17 @@ const Dashboard = () => {
               value={filterStatus} 
               onChange={(e) => setFilterStatus(e.target.value)}
               style={{
-                padding: "10px 12px",
+                padding: "12px",
                 borderRadius: "4px",
                 border: "1px solid #ddd",
-                fontSize: "14px",
+                fontSize: "16px",
                 width: "100%",
+                minHeight: "44px",
+                appearance: "none",
+                backgroundImage: "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/><path d=\"M0 0h24v24H0z\" fill=\"none\"/></svg>')",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 8px center",
+                paddingRight: "32px"
               }}
             >
               <option value="all">All Statuses</option>
@@ -165,12 +171,18 @@ const Dashboard = () => {
           onChange={handleSelectPNM} 
           value={selectedPnmId}
           style={{
-            padding: "10px 12px",
+            padding: "12px",
             borderRadius: "4px",
             border: "1px solid #ddd",
-            fontSize: "14px",
+            fontSize: "16px",
             width: "100%",
             marginBottom: "15px",
+            minHeight: "44px",
+            appearance: "none",
+            backgroundImage: "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/><path d=\"M0 0h24v24H0z\" fill=\"none\"/></svg>')",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 8px center",
+            paddingRight: "32px"
           }}
         >
           <option value="">Select a PNM to Edit</option>
@@ -186,17 +198,18 @@ const Dashboard = () => {
                 label="Full Name"
                 value={editPnm.fullName}
                 onChange={(e) => setEditPnm({ ...editPnm, fullName: e.target.value })}
-                style={{ flex: 1, minWidth: "200px" }}
+                style={{ flex: 1, minWidth: "250px", width: "100%" }}
               />
               
               <Input 
                 label="Phone"
+                type="tel"
                 value={editPnm.contactInfo?.phone || ""}
                 onChange={(e) => setEditPnm({ 
                   ...editPnm, 
                   contactInfo: { ...editPnm.contactInfo, phone: e.target.value } 
                 })}
-                style={{ flex: 1, minWidth: "200px" }}
+                style={{ flex: 1, minWidth: "250px", width: "100%" }}
               />
               
               <Input 
@@ -207,7 +220,7 @@ const Dashboard = () => {
                   ...editPnm, 
                   contactInfo: { ...editPnm.contactInfo, email: e.target.value } 
                 })}
-                style={{ flex: 1, minWidth: "200px" }}
+                style={{ flex: 1, minWidth: "250px", width: "100%" }}
               />
             </div>
             
@@ -219,12 +232,18 @@ const Dashboard = () => {
                 value={editPnm.status || "Pending"}
                 onChange={(e) => setEditPnm({ ...editPnm, status: e.target.value })}
                 style={{
-                  padding: "10px 12px",
+                  padding: "12px",
                   borderRadius: "4px",
                   border: "1px solid #ddd",
-                  fontSize: "14px",
+                  fontSize: "16px",
                   width: "100%",
                   marginBottom: "15px",
+                  minHeight: "44px",
+                  appearance: "none",
+                  backgroundImage: "url('data:image/svg+xml;utf8,<svg fill=\"black\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/><path d=\"M0 0h24v24H0z\" fill=\"none\"/></svg>')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 8px center",
+                  paddingRight: "32px"
                 }}
               >
                 <option value="Pending">Pending</option>
@@ -254,7 +273,7 @@ const Dashboard = () => {
                 <AddPnmButton />
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "15px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "15px" }}>
                 {filteredPnms.map((pnm) => (
                   <Card 
                     key={pnm.id} 
@@ -264,30 +283,30 @@ const Dashboard = () => {
                       setSelectedPnmId(pnm.id);
                       setEditPnm({ ...pnm });
                     }}
-                    style={{ cursor: "pointer" }}
+                    style={{ cursor: "pointer", width: "100%" }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <h3 style={{ margin: "0 0 10px 0" }}>{pnm.fullName}</h3>
+                    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                      <h3 style={{ margin: "0 0 10px 0", fontSize: 'clamp(16px, 4vw, 18px)', wordBreak: 'break-word' }}>{pnm.fullName}</h3>
                       <span style={getStatusBadgeStyle(pnm.status || "Pending")}>
                         {pnm.status || "Pending"}
                       </span>
                     </div>
                     
-                    <div style={{ fontSize: "14px", color: "#555" }}>
+                    <div style={{ fontSize: "14px", color: "#555", wordBreak: 'break-word' }}>
                       {pnm.contactInfo?.phone && (
-                        <p style={{ margin: "5px 0" }}>
+                        <p style={{ margin: "5px 0", overflowWrap: 'break-word' }}>
                           <strong>Phone:</strong> {pnm.contactInfo.phone}
                         </p>
                       )}
                       
                       {pnm.contactInfo?.email && (
-                        <p style={{ margin: "5px 0" }}>
+                        <p style={{ margin: "5px 0", overflowWrap: 'break-word' }}>
                           <strong>Email:</strong> {pnm.contactInfo.email}
                         </p>
                       )}
                       
                       {pnm.referredBy && (
-                        <p style={{ margin: "5px 0" }}>
+                        <p style={{ margin: "5px 0", overflowWrap: 'break-word' }}>
                           <strong>Referred by:</strong> {pnm.referredBy}
                         </p>
                       )}

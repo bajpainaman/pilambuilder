@@ -7,7 +7,9 @@ import {
   signInWithPhoneNumber,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut
+  signOut,
+  setPersistence, 
+  browserLocalPersistence
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -37,6 +39,14 @@ const firebaseConfig = {
 // Initialize Firebase Services
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Set persistence to LOCAL for better mobile experience
+// This keeps the user signed in even if they close the browser
+setPersistence(auth, browserLocalPersistence)
+  .catch((error) => {
+    console.error("Error setting auth persistence:", error);
+  });
+
 const firestore = getFirestore(app);
 const realtimeDB = getDatabase(app);
 const googleProvider = new GoogleAuthProvider();

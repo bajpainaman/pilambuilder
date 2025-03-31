@@ -17,6 +17,7 @@ const Layout = ({
     maxWidth: maxWidth,
     margin: '0 auto',
     padding: padding,
+    width: '100%',
   };
 
   const headerStyles = {
@@ -26,36 +27,50 @@ const Layout = ({
     marginBottom: '20px',
     borderBottom: '1px solid #eee',
     paddingBottom: '10px',
+    flexWrap: 'wrap',
+    gap: '10px',
   };
 
   const titleStyles = {
-    fontSize: '24px',
+    fontSize: 'clamp(18px, 5vw, 24px)',
     fontWeight: 'bold',
     margin: '0',
+    wordBreak: 'break-word',
   };
 
   const buttonContainerStyles = {
     display: 'flex',
     gap: '10px',
+    flexWrap: 'wrap',
   };
 
   const backButtonStyles = {
-    padding: '8px 16px',
+    padding: '10px 16px',
     backgroundColor: '#eee',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '14px',
+    minHeight: '44px',
+    minWidth: '44px', // Minimum touch target size
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   };
 
   const logoutButtonStyles = {
-    padding: '8px 16px',
+    padding: '10px 16px',
     backgroundColor: '#f44336',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '14px',
+    minHeight: '44px',
+    minWidth: '44px', // Minimum touch target size
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   };
 
   const handleLogout = async () => {
